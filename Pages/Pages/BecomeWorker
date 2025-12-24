@@ -1,0 +1,299 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+const professions = [
+    "Electrician",
+    "Instalator", 
+    "Zugrav",
+    "Tâmplar",
+    "IT",
+    "Lac & Vopsitor",
+    "Meșter universal",
+    "Constructor",
+    "Instalator gaze",
+    "Climatizare"
+];
+
+export default function BecomeWorker() {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [isSuccess, setIsSuccess] = useState(false);
+
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+    });
+
+    const [formData, setFormData] = useState({
+        name: '',
+        profession: '',
+        location: '',
+        working_hours: '08:00 - 18:00',
+        price_per_hour: '',
+        phone: '',
+        description: '',
+        availability: 'Disponibil azi',
+        rating: 5
+    });
+
+    const createWorkerMutation = useMutation({
+        mutationFn: async (data) => {
+            const workerData = {
+                ...data,
+                price_per_hour: parseFloat(data.price_per_hour),
+                min_price: parseFloat(data.price_per_hour) - 20,
+                max_price: parseFloat(data.price_per_hour) + 30,
+            };
+            return base44.entities.Muncitori.create(workerData);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['workers'] });
+            setIsSuccess(true);
+            toast.success('Te-ai înregistrat cu succes ca muncitor!');
+        },
+        onError: (error) => {
+            toast.error('A apărut o eroare. Te rugăm să încerci din nou.');
+        }
+    });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.name || !formData.profession || !formData.location || !formData.phone || !formData.price_per_hour) {
+            toast.error('Te rugăm să completezi toate câmpurile obligatorii');
+            return;
+        }
+        createWorkerMutation.mutate(formData);
+    };
+
+    const handleChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    if (isSuccess) {
+        return (
+            <div className="min-h-full bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center"
+                >
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center mx-auto mb-6">
+                        <CheckCircle2 className="w-10 h-10 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Felicitări!</h2>
+                    <p className="text-gray-600 mb-6 max-w-sm">
+                        Te-ai înregistrat cu succes ca muncitor. Clienții te pot contacta acum!
+                    </p>
+                    <Button
+                        onClick={() => navigate(-1)}
+                        className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-xl"
+                    >
+                        Înapoi la profil
+                    </Button>
+                </motion.div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-full bg-gradient-to-b from-orange-50/50 to-white pb-24">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-orange-400 to-orange-500 px-4 pt-8 pb-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-white" />
+                    </button>
+                    <div>
+                        <h1 className="text-xl font-bold text-white">Angajează-te</h1>
+                        <p className="text-orange-100 text-sm">Devino muncitor pe FixIt</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Info Banner */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mx-4 mt-4 mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl"
+            >
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <Briefcase className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-blue-900 mb-1">De ce să te alături?</h3>
+                        <p className="text-sm text-blue-700">
+                            Primești comenzi direct de la clienți, lucrezi la programul tău și câștigi bani făcând ce știi cel mai bine!
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Registration Form */}
+            <form onSubmit={handleSubmit} className="px-4 space-y-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5"
+                >
+                    <div className="space-y-2">
+                        <Label htmlFor="name" className="text-gray-700 font-medium">
+                            Numele tău complet <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => handleChange('name', e.target.value)}
+                            placeholder="ex: Ion Popescu"
+                            className="rounded-xl"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="profession" className="text-gray-700 font-medium">
+                            Profesie / Servicii <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={formData.profession} onValueChange={(val) => handleChange('profession', val)}>
+                            <SelectTrigger className="rounded-xl">
+                                <SelectValue placeholder="Alege profesia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {professions.map(prof => (
+                                    <SelectItem key={prof} value={prof}>{prof}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="location" className="text-gray-700 font-medium">
+                            Locație / Zonă <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="location"
+                            value={formData.location}
+                            onChange={(e) => handleChange('location', e.target.value)}
+                            placeholder="ex: București Sector 1"
+                            className="rounded-xl"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-gray-700 font-medium">
+                            Telefon <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="phone"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => handleChange('phone', e.target.value)}
+                            placeholder="ex: 0721234567"
+                            className="rounded-xl"
+                            required
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="working_hours" className="text-gray-700 font-medium">
+                                Ore de lucru
+                            </Label>
+                            <Input
+                                id="working_hours"
+                                value={formData.working_hours}
+                                onChange={(e) => handleChange('working_hours', e.target.value)}
+                                placeholder="08:00 - 18:00"
+                                className="rounded-xl"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="price_per_hour" className="text-gray-700 font-medium">
+                                Preț / Oră (RON) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="price_per_hour"
+                                type="number"
+                                value={formData.price_per_hour}
+                                onChange={(e) => handleChange('price_per_hour', e.target.value)}
+                                placeholder="100"
+                                className="rounded-xl"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="description" className="text-gray-700 font-medium">
+                            Descriere / Abilități
+                        </Label>
+                        <Textarea
+                            id="description"
+                            value={formData.description}
+                            onChange={(e) => handleChange('description', e.target.value)}
+                            placeholder="Descrie-ți experiența și abilitățile..."
+                            className="rounded-xl h-24"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="availability" className="text-gray-700 font-medium">
+                            Disponibilitate
+                        </Label>
+                        <Select value={formData.availability} onValueChange={(val) => handleChange('availability', val)}>
+                            <SelectTrigger className="rounded-xl">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Disponibil azi">Disponibil azi</SelectItem>
+                                <SelectItem value="Disponibil mâine">Disponibil mâine</SelectItem>
+                                <SelectItem value="Ocupat">Ocupat</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </motion.div>
+
+                {/* Submit Button */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <Button
+                        type="submit"
+                        disabled={createWorkerMutation.isPending}
+                        className="w-full py-6 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-2xl font-semibold text-base flex items-center justify-center gap-2"
+                    >
+                        {createWorkerMutation.isPending ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Se înregistrează...
+                            </>
+                        ) : (
+                            <>
+                                <Briefcase className="w-5 h-5" />
+                                Înregistrează-te ca muncitor
+                            </>
+                        )}
+                    </Button>
+                </motion.div>
+            </form>
+        </div>
+    );
+}

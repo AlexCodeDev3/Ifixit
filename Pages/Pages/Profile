@@ -1,0 +1,185 @@
+import React from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { User, Mail, MessageSquare, Calendar, LogOut, ChevronRight, Wrench, Shield, Bell, Briefcase, Users } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+
+export default function Profile() {
+    const { data: user, isLoading: isLoadingUser } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+    });
+
+    const { data: conversations } = useQuery({
+        queryKey: ['allConversations'],
+        queryFn: async () => {
+            const user = await base44.auth.me();
+            return base44.entities.ChatConversation.filter({ created_by: user.email });
+        },
+    });
+
+    const totalMessages = conversations?.reduce((acc, conv) => acc + (conv.messages?.length || 0), 0) || 0;
+
+    const handleLogout = () => {
+        base44.auth.logout();
+    };
+
+    const menuItems = [
+        { icon: Bell, label: 'Notificări', value: 'Activate' },
+        { icon: Shield, label: 'Confidențialitate', value: '' },
+        { icon: Wrench, label: 'Setări', value: '' },
+    ];
+
+    if (isLoadingUser) {
+        return (
+            <div className="p-4 space-y-4">
+                <Skeleton className="h-32 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-48 w-full rounded-2xl" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-full bg-gradient-to-b from-orange-50/50 to-white pb-24">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-orange-400 to-orange-500 px-4 pt-8 pb-16 rounded-b-[2rem]">
+                <h1 className="text-xl font-semibold text-white mb-6">Profilul meu</h1>
+                
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-4"
+                >
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+                        <User className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="text-white">
+                        <h2 className="text-lg font-semibold">{user?.full_name || 'Utilizator'}</h2>
+                        <p className="text-orange-100 text-sm flex items-center gap-1.5">
+                            <Mail className="w-4 h-4" />
+                            {user?.email}
+                        </p>
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Stats Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mx-4 -mt-8 bg-white rounded-2xl shadow-lg shadow-gray-100 p-4"
+            >
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-orange-50 rounded-xl">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                            <MessageSquare className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{totalMessages}</p>
+                        <p className="text-xs text-gray-500">Mesaje trimise</p>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-xl">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                            <Calendar className="w-5 h-5 text-green-500" />
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{conversations?.length || 0}</p>
+                        <p className="text-xs text-gray-500">Conversații</p>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Worker Actions */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mx-4 mt-6 space-y-3"
+            >
+                <Link to={createPageUrl('FindWorker')}>
+                    <div className="bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-200 hover:shadow-xl transition-shadow">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-base">Caută muncitor</h3>
+                                    <p className="text-sm text-orange-100">Găsește specialiști verificați</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5" />
+                        </div>
+                    </div>
+                </Link>
+
+                <Link to={createPageUrl('BecomeWorker')}>
+                    <div className="bg-gradient-to-r from-green-400 to-green-500 rounded-2xl p-4 text-white shadow-lg shadow-green-200 hover:shadow-xl transition-shadow">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                                    <Briefcase className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-base">Angajează-te</h3>
+                                    <p className="text-sm text-green-100">Devino muncitor pe FixIt</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5" />
+                        </div>
+                    </div>
+                </Link>
+            </motion.div>
+
+            {/* Menu Items */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mx-4 mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+                {menuItems.map((item, idx) => {
+                    const Icon = item.icon;
+                    return (
+                        <div
+                            key={idx}
+                            className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                                    <Icon className="w-5 h-5 text-gray-600" />
+                                </div>
+                                <span className="font-medium text-gray-800">{item.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {item.value && (
+                                    <span className="text-sm text-gray-400">{item.value}</span>
+                                )}
+                                <ChevronRight className="w-5 h-5 text-gray-300" />
+                            </div>
+                        </div>
+                    );
+                })}
+            </motion.div>
+
+            {/* Logout Button */}
+            <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleLogout}
+                className="mx-4 mt-6 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl font-medium hover:bg-red-100 transition-colors"
+            >
+                <LogOut className="w-5 h-5" />
+                Deconectare
+            </motion.button>
+
+            {/* Version */}
+            <p className="text-center text-xs text-gray-400 mt-8">FixIt v1.0.0</p>
+        </div>
+    );
+}

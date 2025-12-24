@@ -1,0 +1,57 @@
+:root{
+  --accent:#FF6B35;
+  --bg:#f7f7f8;
+  --card:#ffffff;
+  --muted:#666;
+}
+*{box-sizing:border-box}
+html,body,#root{height:100%;}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background:var(--bg);
+  color:#111;
+  -webkit-font-smoothing:antialiased;
+}
+.app-shell{max-width:980px;margin:0 auto;padding:12px 12px 80px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .dot{width:36px;height:36px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+h1{font-size:18px;margin:0}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #eee;display:flex;gap:2px;padding:6px 8px}
+.tab{flex:1;text-align:center;padding:8px 6px;border-radius:10px;color:#333}
+.tab.active{background:linear-gradient(90deg,var(--accent),#ff8b5b);color:#fff}
+
+.content{padding:8px 0}
+
+.card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+.card h3{margin:0 0 6px 0}
+.muted{color:var(--muted);font-size:13px}
+
+.row{display:flex;gap:8px;align-items:center}
+.col{flex:1}
+
+.button{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none}
+.button.ghost{background:transparent;color:var(--accent);border:1px solid rgba(255,107,53,0.15)}
+
+.small{font-size:13px}
+
+.worker-list{display:grid;grid-template-columns:1fr;gap:10px}
+
+@media(min-width:720px){
+  .app-shell{padding:24px}
+  .worker-list{grid-template-columns:repeat(2,1fr)}
+}
+
+.input{width:100%;padding:10px;border-radius:10px;border:1px solid #eee}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+
+.stars{color:#f5b301}
+
+.badge{padding:6px 8px;border-radius:999px;font-size:12px}
+.badge.green{background:#e6fff0;color:#0b6a36}
+.badge.yellow{background:#fff7e6;color:#7a5a00}
+.badge.gray{background:#f2f2f4;color:#555}
+
+.help-note{font-size:13px;color:#333}

@@ -1,0 +1,202 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, RotateCcw } from 'lucide-react';
+import MessageBubble from '@/components/chat/MessageBubble';
+import ChatInput from '@/components/chat/ChatInput';
+import WelcomeMessage from '@/components/chat/WelcomeMessage';
+
+export default function Chat() {
+    const [isLoading, setIsLoading] = useState(false);
+    const messagesEndRef = useRef(null);
+    const queryClient = useQueryClient();
+
+    // Fetch existing conversation
+    const { data: conversations, isLoading: isLoadingConversations } = useQuery({
+        queryKey: ['conversations'],
+        queryFn: async () => {
+            const user = await base44.auth.me();
+            return base44.entities.ChatConversation.filter({ created_by: user.email }, '-created_date', 1);
+        },
+    });
+
+    const conversation = conversations?.[0];
+    const messages = conversation?.messages || [];
+
+    // Scroll to bottom on new messages
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    // Create or update conversation
+    const saveMutation = useMutation({
+        mutationFn: async ({ newMessages, title }) => {
+            if (conversation) {
+                return base44.entities.ChatConversation.update(conversation.id, { 
+                    messages: newMessages 
+                });
+            } else {
+                return base44.entities.ChatConversation.create({ 
+                    messages: newMessages,
+                    title: title || 'Conversație nouă'
+                });
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+    });
+
+    const handleSend = async (text) => {
+        setIsLoading(true);
+
+        const userMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: text,
+            timestamp: new Date().toISOString(),
+        };
+
+        const updatedMessages = [...messages, userMessage];
+        
+        // Save user message immediately
+        await saveMutation.mutateAsync({ 
+            newMessages: updatedMessages,
+            title: messages.length === 0 ? text.slice(0, 50) : undefined
+        });
+
+        // Get AI response
+        const response = await base44.integrations.Core.InvokeLLM({
+            prompt: `Ești FixIt, un asistent prietenos pentru reparații casnice în România.
+
+Utilizatorul a descris această problemă: "${text}"
+
+RĂSPUNS:
+1. Începe cu 1-2 propoziții scurte despre siguranță și liniștirea utilizatorului (nu descrie problema în detaliu).
+
+2. Oferă 2-4 soluții de reparație DISTINCTE (fără duplicate). Fiecare soluție trebuie să fie unică și să aibă un scop diferit.
+
+IMPORTANT - Format pentru fiecare soluție:
+- title: Titlu foarte clar și concis (3-5 cuvinte maxim, ex: "Înlocuire priză arsă")
+- description: O singură propoziție scurtă despre ce presupune reparația (maxim 15 cuvinte)
+- estimatedTime: Format simplu (ex: "30 min", "1-2 ore", "45 min")
+- priceRange: Format simplu în RON (ex: "50-100 RON", "150-300 RON")
+- difficulty: 1 pentru ușor, 2 pentru mediu, 3 pentru dificil
+
+REGULI:
+- Nu repeta aceeași soluție de două ori
+- Fiecare card trebuie să fie distinct
+- Fii prietenos dar concis
+- Prețuri realiste pentru România
+- Mesajul principal: maxim 2 propoziții`,
+            response_json_schema: {
+                type: "object",
+                properties: {
+                    message: { type: "string", description: "Răspunsul principal explicativ" },
+                    repairs: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                title: { type: "string" },
+                                description: { type: "string" },
+                                estimatedTime: { type: "string" },
+                                priceRange: { type: "string" },
+                                difficulty: { type: "number" }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const assistantMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: response.message,
+            timestamp: new Date().toISOString(),
+            repairs: response.repairs || [],
+        };
+
+        await saveMutation.mutateAsync({ 
+            newMessages: [...updatedMessages, assistantMessage] 
+        });
+
+        setIsLoading(false);
+    };
+
+    const handleNewChat = async () => {
+        if (conversation) {
+            await base44.entities.ChatConversation.update(conversation.id, { messages: [] });
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+    };
+
+    if (isLoadingConversations) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col h-full bg-gradient-to-b from-orange-50/50 to-white">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">F</span>
+                    </div>
+                    <div>
+                        <h1 className="font-semibold text-gray-900">FixIt</h1>
+                        <p className="text-xs text-gray-500">Asistentul tău pentru reparații</p>
+                    </div>
+                </div>
+                {messages.length > 0 && (
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleNewChat}
+                        className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                    >
+                        <RotateCcw className="w-5 h-5 text-gray-500" />
+                    </motion.button>
+                )}
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                <AnimatePresence mode="wait">
+                    {messages.length === 0 ? (
+                        <WelcomeMessage onPromptClick={handleSend} />
+                    ) : (
+                        messages.map((msg) => (
+                            <MessageBubble key={msg.id} message={msg} />
+                        ))
+                    )}
+                </AnimatePresence>
+
+                {isLoading && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center gap-2 text-gray-500"
+                    >
+                        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+                        </div>
+                        <span className="text-sm">Fixi gândește...</span>
+                    </motion.div>
+                )}
+
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="px-4 py-3 pb-24 bg-gradient-to-t from-white via-white to-transparent">
+                <ChatInput onSend={handleSend} isLoading={isLoading} />
+            </div>
+        </div>
+    );
+}

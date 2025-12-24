@@ -1,0 +1,84 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Clock, Banknote, Star, Wrench, ChevronRight, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+
+export default function RepairCard({ repair, index }) {
+    const { title, description, estimatedTime, priceRange, difficulty } = repair;
+
+    const renderStars = (level) => {
+        return Array.from({ length: 3 }, (_, i) => (
+            <Star
+                key={i}
+                className={`w-4 h-4 ${i < level ? 'fill-orange-400 text-orange-400' : 'text-gray-300'}`}
+            />
+        ));
+    };
+
+    const getDifficultyLabel = (level) => {
+        if (level === 1) return 'Ușor';
+        if (level === 2) return 'Mediu';
+        return 'Dificil';
+    };
+
+    const getProfessionFromTitle = (title) => {
+        if (title.toLowerCase().includes('electric') || title.toLowerCase().includes('priză')) return 'Electrician';
+        if (title.toLowerCase().includes('robinet') || title.toLowerCase().includes('țeavă') || title.toLowerCase().includes('apă')) return 'Instalator';
+        if (title.toLowerCase().includes('perete') || title.toLowerCase().includes('zugrăvit') || title.toLowerCase().includes('vopsit')) return 'Zugrav';
+        if (title.toLowerCase().includes('ușă') || title.toLowerCase().includes('lemn')) return 'Tâmplar';
+        return 'Meșter universal';
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: index * 0.1, duration: 0.3, ease: 'easeOut' }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow"
+        >
+            <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
+                            <Wrench className="w-4 h-4 text-white" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900 text-base">{title}</h3>
+                    </div>
+                    
+                    {description && (
+                        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{description}</p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            <Clock className="w-4 h-4 text-orange-500" />
+                            <span>{estimatedTime}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            <Banknote className="w-4 h-4 text-green-500" />
+                            <span>{priceRange}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5">
+                            <div className="flex">{renderStars(difficulty)}</div>
+                            <span className="text-xs text-gray-500">{getDifficultyLabel(difficulty)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Find Worker Button */}
+            <Link to={createPageUrl('FindWorker') + `?profession=${getProfessionFromTitle(title)}`}>
+                <Button 
+                    className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-xl flex items-center justify-center gap-2"
+                >
+                    <Users className="w-4 h-4" />
+                    Caută muncitor
+                </Button>
+            </Link>
+        </motion.div>
+    );
+}

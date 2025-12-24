@@ -1,0 +1,180 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HelpCircle, ChevronDown, MessageCircle, Wrench, Users, Phone, Mail, ExternalLink } from 'lucide-react';
+
+const faqs = [
+    {
+        question: 'Cum funcționează FixIt?',
+        answer: 'Descrie problema ta de acasă în chat, iar FixIt îți va sugera opțiuni de reparație cu estimări de timp, cost și dificultate. Poți folosi aceste informații pentru a repara singur sau pentru a contacta un specialist.',
+    },
+    {
+        question: 'Este gratuit serviciul?',
+        answer: 'Da! Consultanța prin FixIt este complet gratuită. Plătești doar dacă decizi să angajezi un specialist pentru reparație.',
+    },
+    {
+        question: 'Pot găsi electricieni sau instalatori?',
+        answer: 'În curând! Lucrăm la funcționalitatea de conectare cu specialiști verificați din zona ta. Rămâi pe fază pentru actualizări!',
+    },
+    {
+        question: 'Cât de precise sunt estimările?',
+        answer: 'Estimările sunt orientative și bazate pe prețuri medii din România. Costul final poate varia în funcție de materiale, locație și complexitatea problemei.',
+    },
+    {
+        question: 'Pot salva conversațiile?',
+        answer: 'Da! Toate conversațiile tale sunt salvate automat și le poți accesa oricând din contul tău.',
+    },
+];
+
+function FAQItem({ faq, isOpen, onToggle }) {
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button
+                onClick={onToggle}
+                className="w-full flex items-center justify-between p-4 text-left"
+            >
+                <span className="font-medium text-gray-800 pr-4">{faq.question}</span>
+                <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                </motion.div>
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <p className="px-4 pb-4 text-gray-600 text-sm leading-relaxed">
+                            {faq.answer}
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+export default function Help() {
+    const [openIndex, setOpenIndex] = useState(null);
+
+    const contactOptions = [
+        { icon: Mail, label: 'Email', value: 'suport@fixit.ro', href: 'mailto:suport@fixit.ro' },
+        { icon: Phone, label: 'Telefon', value: '0800 123 456', href: 'tel:0800123456' },
+    ];
+
+    return (
+        <div className="min-h-full bg-gradient-to-b from-orange-50/50 to-white pb-24">
+            {/* Header */}
+            <div className="px-4 pt-8 pb-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
+                        <HelpCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-gray-900">Ajutor</h1>
+                        <p className="text-sm text-gray-500">Cum te putem ajuta?</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="px-4 mb-6">
+                <div className="grid grid-cols-3 gap-3">
+                    {[
+                        { icon: MessageCircle, label: 'Chat nou', color: 'from-blue-400 to-blue-500' },
+                        { icon: Wrench, label: 'Tutorial', color: 'from-purple-400 to-purple-500' },
+                        { icon: Users, label: 'Comunitate', color: 'from-green-400 to-green-500' },
+                    ].map((item, idx) => {
+                        const Icon = item.icon;
+                        return (
+                            <motion.button
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl shadow-sm border border-gray-100"
+                            >
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center`}>
+                                    <Icon className="w-6 h-6 text-white" />
+                                </div>
+                                <span className="text-xs font-medium text-gray-700">{item.label}</span>
+                            </motion.button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* FAQ Section */}
+            <div className="px-4 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Întrebări frecvente</h2>
+                <div className="space-y-3">
+                    {faqs.map((faq, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                        >
+                            <FAQItem
+                                faq={faq}
+                                isOpen={openIndex === idx}
+                                onToggle={() => setOpenIndex(openIndex === idx ? null : idx)}
+                            />
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Contact Section */}
+            <div className="px-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Contactează-ne</h2>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    {contactOptions.map((option, idx) => {
+                        const Icon = option.icon;
+                        return (
+                            <a
+                                key={idx}
+                                href={option.href}
+                                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                                        <Icon className="w-5 h-5 text-orange-500" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-gray-800">{option.label}</p>
+                                        <p className="text-sm text-gray-500">{option.value}</p>
+                                    </div>
+                                </div>
+                                <ExternalLink className="w-5 h-5 text-gray-300" />
+                            </a>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Coming Soon Banner */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mx-4 mt-6 p-4 bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl text-white"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                        <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="font-semibold">În curând: Specialiști verificați</p>
+                        <p className="text-sm text-orange-100">Conectează-te cu electricieni și instalatori din zona ta!</p>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+}

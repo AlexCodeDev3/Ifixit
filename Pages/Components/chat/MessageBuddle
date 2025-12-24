@@ -1,0 +1,58 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import RepairCard from './RepairCard';
+import { User, Bot } from 'lucide-react';
+
+export default function MessageBubble({ message }) {
+    const isUser = message.role === 'user';
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+        >
+            {/* Avatar */}
+            <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
+                isUser 
+                    ? 'bg-gradient-to-br from-orange-400 to-orange-500' 
+                    : 'bg-gradient-to-br from-gray-100 to-gray-200'
+            }`}>
+                {isUser ? (
+                    <User className="w-5 h-5 text-white" />
+                ) : (
+                    <Bot className="w-5 h-5 text-orange-500" />
+                )}
+            </div>
+
+            {/* Message Content */}
+            <div className={`flex-1 max-w-[85%] ${isUser ? 'items-end' : 'items-start'}`}>
+                <div className={`rounded-2xl px-4 py-3 ${
+                    isUser 
+                        ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-tr-md' 
+                        : 'bg-white border border-gray-100 text-gray-800 rounded-tl-md shadow-sm'
+                }`}>
+                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                </div>
+
+                {/* Repair Cards */}
+                {message.repairs && message.repairs.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                        {message.repairs.map((repair, idx) => (
+                            <RepairCard key={idx} repair={repair} index={idx} />
+                        ))}
+                    </div>
+                )}
+
+                {/* Timestamp */}
+                <p className={`text-xs text-gray-400 mt-1.5 ${isUser ? 'text-right' : 'text-left'}`}>
+                    {new Date(message.timestamp).toLocaleTimeString('ro-RO', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    })}
+                </p>
+            </div>
+        </motion.div>
+    );
+}
